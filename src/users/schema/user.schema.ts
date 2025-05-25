@@ -5,6 +5,8 @@ import {  SchemaTypes, Types } from "mongoose";
 export class User {
     @Prop({type: SchemaTypes.ObjectId , auto: true})
     _id: Types.ObjectId;
+    @Prop()
+    refreshToken?: string;
     @Prop({unique: true, required: true})
     email: string;
     @Prop({required: true})
