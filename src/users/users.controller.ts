@@ -19,4 +19,8 @@ export class UsersController {
         console.log(user);
         return await this.userService.getUsers();
     }
+    @Get('me')
+    async me(user: User){
+        return this.userService.getUsers();
+    }
 }

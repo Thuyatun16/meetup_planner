@@ -4,7 +4,8 @@ import { User } from './schema/user.schema';
 import { FilterQuery, Model, UpdateQuery } from 'mongoose';
 import { CreateUserRequest } from './dto/create-user.request';
 import { hash } from 'bcryptjs';
-import { CurrentUser } from 'src/auth/current-user.decorator';
+import { ConflictException } from '@nestjs/common';
+import { isStrongPassword } from 'class-validator';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +13,10 @@ export class UsersService {
         @InjectModel(User.name) private readonly userModel: Model<User>,
     ){}
     async createUser(data: CreateUserRequest){
+        const user = await this.userModel.findOne({email: data.email});
+        if(user){
+            throw new ConflictException('User already exists');
+        }
         await new this.userModel({
             ...data,
             password: await hash(data.password, 10),
@@ -27,10 +32,23 @@ export class UsersService {
     async getUsers(){
         return await this.userModel.find({});
     }
-    async updateUser(
-        query: FilterQuery<User>,
-        update: UpdateQuery<User>,
-    ){
-        return await this.userModel.findOneAndUpdate(query, update);
+    async updateUser(query: FilterQuery<User>,update: UpdateQuery<User>){
+        const finalUpdate = {...update};
+        if(update.password){
+            if(!isStrongPassword(update.password)){
+                throw new ConflictException('Password is not strong enough');
+            }
+            finalUpdate.password = await hash(update.password, 10)
+        }
+         return await this.userModel.findOneAndUpdate(query,finalUpdate,{new: true});
+    }
+    async deleteUser(email: string){
+        const result=  await this.userModel.deleteOne({email});
+        if( result.deletedCount === 0){
+            throw new NotFoundException('User Not Found');
+        }
+        return {
+            message: 'Delete Successfully'
+        }
     }
 }

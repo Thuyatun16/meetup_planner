@@ -22,18 +22,19 @@ export class AuthService {
         }
 
         const expireAccessToken = new Date();
-        expireAccessToken.setMilliseconds(expireAccessToken.getTime() + 
+        expireAccessToken.setTime(expireAccessToken.getTime() + 
         parseInt(
             this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_EXPIRATION_TIME'),
         ));
 
         const expireRefereshToken = new Date();
-        expireRefereshToken.setMilliseconds(expireRefereshToken.getTime() + 
+        expireRefereshToken.setTime(expireRefereshToken.getTime() + 
         parseInt(
             this.configService.getOrThrow<string>('JWT_REFRESH_TOKEN_EXPIRATION_TIME'),
         ));
         const tokenPayload: TokenPayload = {
-            userId: user._id.toString(), // Use toString() instead of toHexString()
+            userId: user._id.toString(),
+            role: user.role // Use toString() instead of toHexString()
         };
 
         const accessToken = this.jwtService.sign(tokenPayload,
@@ -90,5 +91,8 @@ export class AuthService {
         } catch (error) {
             throw new UnauthorizedException('Invalid Credentials');
         }
+    }
+    async deleteUserByEmail(email: string){
+        return this.userService.deleteUser(email);
     }
 }

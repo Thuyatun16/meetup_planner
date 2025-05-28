@@ -1,14 +1,20 @@
-import { Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Param, Post, Put, Res, UseGuards } from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { User } from 'src/users/schema/user.schema';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh.auth.guard';
+import { RolesGuard } from './guards/role.guard';
+import { Role } from './role-decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UsersService } from 'src/users/users.service';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+    constructor(private readonly authService: AuthService
+        ,private readonly userService: UsersService
+    ) { }
     @Post('login')
     @UseGuards(LocalAuthGuard)
     async login(
@@ -25,6 +31,18 @@ export class AuthController {
     ){
         await this.authService.login(user, response);
     }
+    @Delete()
+    @UseGuards(JwtAuthGuard,RolesGuard)
+    @Role('admin')
+    async deleteUser(@Body('email')email: string){
+        await this.authService.deleteUserByEmail(email);
+    }
+    @Put('me')
+    @UseGuards(JwtAuthGuard)
+    async updateUser(@CurrentUser() user:User,@Body() updateData: Partial<User>): Promise<User|null>{
+        return await this.userService.updateUser({_id: user._id},updateData);
+    }
+
 
 }
 
