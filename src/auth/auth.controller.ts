@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Post, Put, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Res, UseGuards } from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { User } from 'src/users/schema/user.schema';
@@ -42,8 +42,21 @@ export class AuthController {
     async updateUser(@CurrentUser() user:User,@Body() updateData: Partial<User>): Promise<User|null>{
         return await this.userService.updateUser({_id: user._id},updateData);
     }
-
-
+    // Add this to your existing auth.controller.ts
+    
+    @Get('me')
+    @UseGuards(JwtAuthGuard)
+    async getProfile(@CurrentUser() user: User) {
+      return user;
+    }
+    
+    // You might also want to add a logout endpoint
+    @Post('logout')
+    async logout(@Res({ passthrough: true }) response: Response) {
+      response.clearCookie('Authentication');
+      response.clearCookie('Refresh');
+      return { message: 'Logged out successfully' };
+    }
 }
 
 

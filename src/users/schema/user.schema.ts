@@ -13,5 +13,10 @@ export class User {
     password: string;
     @Prop({ default: 'user'})
     role: string;
+    @Prop()
+    name?: string;
+    @Prop({type: [{type: Types.ObjectId, ref: 'User'}]})
+    friends?: Types.ObjectId[];
+
 }
 export const UserSchema = SchemaFactory.createForClass(User);

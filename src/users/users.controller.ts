@@ -9,7 +9,7 @@ import { User } from './schema/user.schema';
 @Controller('users')
 export class UsersController {
     constructor(private readonly userService: UsersService){}
-    @Post()
+    @Post('signup')
     async createUser(@Body() user: CreateUserRequest ) {
         await this.userService.createUser(user);
     }

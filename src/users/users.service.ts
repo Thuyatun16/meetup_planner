@@ -6,6 +6,9 @@ import { CreateUserRequest } from './dto/create-user.request';
 import { hash } from 'bcryptjs';
 import { ConflictException } from '@nestjs/common';
 import { isStrongPassword } from 'class-validator';
+import { CurrentUser } from 'src/auth/current-user.decorator';
+import { pipe } from 'rxjs';
+import { Friend } from 'src/friend/schema/friend-schema';
 
 @Injectable()
 export class UsersService {
@@ -41,6 +44,9 @@ export class UsersService {
             finalUpdate.password = await hash(update.password, 10)
         }
          return await this.userModel.findOneAndUpdate(query,finalUpdate,{new: true});
+    }
+    async addFriend(userId: string,friendId: string ){
+        return await this.userModel.findByIdAndUpdate(userId, {$push:{friends: friendId}}).exec();
     }
     async deleteUser(email: string){
         const result=  await this.userModel.deleteOne({email});

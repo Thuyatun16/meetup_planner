@@ -58,11 +58,16 @@ export class AuthService {
             secure: this.configService.get<string>('NODE_ENV') === 'production',
             expires: expireAccessToken
         });
+       
         response.cookie('Refresh', refreshToken, {
             httpOnly: true,
             secure: this.configService.get<string>('NODE_ENV') === 'production',
             expires: expireRefereshToken
         });
+        response.send({
+            accessToken,
+            refreshToken
+        })
     }
     async verifyUserRefreshToken(refreshToken: string, userId: string){
         try {
