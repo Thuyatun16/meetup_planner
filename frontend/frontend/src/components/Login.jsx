@@ -78,6 +78,10 @@ const Login = () => {
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </div>
+          <p className="mt-4">
+          Already have an account? <a href="/signup" className="text-blue-500">Sign Up</a>
+        </p>
+        {loginMessage && <p className="mt-4">{loginMessage}</p>}
         </form>
       </div>
     </div>

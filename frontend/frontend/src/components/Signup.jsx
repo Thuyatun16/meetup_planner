@@ -22,7 +22,8 @@ const Signup = () => {
 
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form onSubmit={handleSignup} className="bg-white p-6 rounded shadow-md">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+      <form onSubmit={handleSignup} >
         <h2 className="text-2xl mb-4">Sign Up</h2>
         <input
           type="email"
@@ -54,6 +55,7 @@ const Signup = () => {
         </p>
         {message && <p className="mt-4">{message}</p>}
       </form>
+      </div>
     </div>
   );
 };

@@ -9,12 +9,10 @@ const Friends = () => {
   useEffect(() => {
     const fetchFriends = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/friend', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        });
+        const response = await axios.get('http://localhost:3000/friend', { withCredentials: true });
         setFriends(response.data);
       } catch (error) {
-        setMessage('Error fetching friends');
+        setMessage('Error fetching friends: ' + (error.response?.data?.message || error.message));
       }
     };
     fetchFriends();
@@ -25,17 +23,15 @@ const Friends = () => {
     try {
       await axios.post(
         'http://localhost:3000/friend',
-        { friendEmail },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { email: friendEmail }, 
+        { withCredentials: true }
       );
       setMessage('Friend added!');
-      const response = await axios.get('http://localhost:3000/friend', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      const response = await axios.get('http://localhost:3000/friend', { withCredentials: true });
       setFriends(response.data);
       setFriendEmail('');
     } catch (error) {
-      setMessage('Error: ' + error.response.data.message);
+      setMessage('Error: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -45,6 +41,7 @@ const Friends = () => {
       <form onSubmit={handleAddFriend} className="bg-white p-6 rounded shadow-md mb-6">
         <input
           type="email"
+          name="email"
           value={friendEmail}
           onChange={(e) => setFriendEmail(e.target.value)}
           placeholder="Friend's Email"
@@ -56,9 +53,9 @@ const Friends = () => {
       </form>
       <h2 className="text-2xl mb-4">Your Friends</h2>
       <ul>
-        {friends.map(friendship => (
-          <li key={friendship._id} className="border p-4 mb-2">
-            <p>{friendship.friend.name} ({friendship.friend.email})</p>
+        {friends.map(friend => (
+          <li key={friend._id} className="border p-4 mb-2">
+            <p>{friend.name || 'No name'} ({friend.email})</p>
           </li>
         ))}
       </ul>
