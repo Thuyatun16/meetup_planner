@@ -3,12 +3,19 @@ import { Prop } from "@nestjs/mongoose";
 import { SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
 
+export enum FriendStatus{
+    PENDING = 'pending',
+    ACCEPTED = 'accepted',
+    REJECTED = 'rejected',
+}
 
-@Schema()
-export class Friend{
-    @Prop({type: Types.ObjectId, ref: 'User', require: true})
-    user: Types.ObjectId;
-    @Prop({type: Types.ObjectId, ref: 'User', require: true})
-    friend: Types.ObjectId;
+@Schema({timestamps: true})
+export class Friend extends Document{
+    @Prop( {ref: 'User', require: true})
+    user: string;
+    @Prop({ ref: 'User', require: true})
+    friend: string;
+    @Prop({enum: FriendStatus, default: FriendStatus.PENDING})
+    status: FriendStatus;
 }
 export const FriendSchema = SchemaFactory.createForClass(Friend);

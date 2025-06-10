@@ -1,106 +1,143 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import 'leaflet/dist/leaflet.css';
 
 const Home = () => {
-  const [title, setTitle] = useState('');
-  const [location, setLocation] = useState('');
+  // State management
+  const [formData, setFormData] = useState({
+    title: '',
+    location: '',
+    time: '',
+    participants: []
+  });
   const [friends, setFriends] = useState([]);
-  const [time, setTime] = useState('');
-  const [participants, setParticipants] = useState([]);
   const [meetups, setMeetups] = useState([]);
-  const [message, setMessage] = useState('');
-  const [mapPosition, setMapPosition] = useState([51.505, -0.09]);
-  const [editMeetup, setEditMeetup] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editLocation, setEditLocation] = useState('');
-  const [editTime, setEditTime] = useState('');
-  const [editParticipants, setEditParticipants] = useState([]);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [mapPosition, setMapPosition] = useState([21.991919356573778, 96.09698295593263]); // Default to London
+  const [editData, setEditData] = useState({
+    id: null,
+    title: '',
+    location: '',
+    time: '',
+    participants: []
+  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'upcoming', 'past'
 
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading && !user) navigate('/login');
-  }, [user, loading, navigate]);
-
+  // API configuration
   useEffect(() => {
     axios.defaults.withCredentials = true;
   }, []);
 
-  useEffect(() => {
-    const fetchMeetups = async () => {
-      if (!user) return;
-      try {
-        const response = await axios.get('http://localhost:3000/meetups', { withCredentials: true });
-        const friendResponse = await axios.get('http://localhost:3000/friend', { withCredentials: true });
-        setMeetups(response.data);
-        setFriends(friendResponse.data);
-      } catch (error) {
-        setMessage('Error fetching data: ' + (error.response?.data?.message || error.message));
-        if (error.response?.status === 401) navigate('/login');
-      }
-    };
-    fetchMeetups();
+  // Fetch data
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    try {
+      setIsLoading(true);
+      const [meetupsResponse, friendsResponse] = await Promise.all([
+        axios.get('http://localhost:3000/meetups', { withCredentials: true }),
+        axios.get('http://localhost:3000/friend/friends', { withCredentials: true })
+      ]);
+      setMeetups(meetupsResponse.data);
+      setFriends(friendsResponse.data);
+    } catch (error) {
+      toast.error('Error fetching data');
+      if (error.response?.status === 401) navigate('/login');
+    } finally {
+      setIsLoading(false);
+    }
   }, [user, navigate]);
 
   useEffect(() => {
-    if (editMeetup) {
-      setEditTitle(editMeetup.title);
-      setEditLocation(editMeetup.location);
-      setEditTime(new Date(editMeetup.time).toISOString().slice(0, 16));
-      setEditParticipants(Array.isArray(editMeetup.participants) ? editMeetup.participants.map(p => p._id) : []);
-    }
-  }, [editMeetup]);
+    fetchData();
+  }, [fetchData]);
+
+  // Filter meetups based on active tab
+  const filteredMeetups = meetups.filter(meetup => {
+    const now = new Date();
+    const meetupTime = new Date(meetup.time);
+    
+    if (activeTab === 'upcoming') return meetupTime > now;
+    if (activeTab === 'past') return meetupTime < now;
+    return true; // 'all' tab
+  });
+
+  // Form handlers
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleParticipantChange = (e) => {
+    const selected = Array.from(e.target.selectedOptions, option => option.value);
+    setFormData(prev => ({ ...prev, participants: selected }));
+  };
 
   const handleCreateMeetup = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
-        'http://localhost:3000/meetups',
-        { title, location, time: new Date(time), participants },
-        { withCredentials: true }
-      );
-      setMessage('Meetup created!');
-      const response = await axios.get('http://localhost:3000/meetups', { withCredentials: true });
-      setMeetups(response.data);
-      setTitle('');
-      setLocation('');
-      setTime('');
-      setParticipants([]);
+      await axios.post('http://localhost:3000/meetups', {
+        ...formData,
+        time: new Date(formData.time),
+      }, { withCredentials: true });
+      toast.success('Meetup created successfully');
+      await fetchData();
+      setFormData({
+        title: '',
+        location: '',
+        time: '',
+        participants: []
+      });
     } catch (error) {
-      setMessage('Error: ' + (error.response?.data?.message || error.message));
+      toast.error('Error creating meetup');
       if (error.response?.status === 401) navigate('/login');
     }
   };
 
-  const handleEditMeetup = (meetup) => {
-    setEditMeetup(meetup);
-    setShowEditModal(true);
+  // Edit handlers
+  const openEditModal = (meetup) => {
+    setEditData({
+      id: meetup._id,
+      title: meetup.title,
+      location: meetup.location,
+      time: new Date(meetup.time).toISOString().slice(0, 16),
+      participants: Array.isArray(meetup.participants) 
+        ? meetup.participants.map(p => p._id) 
+        : []
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditParticipants = (e) => {
+    const selected = Array.from(e.target.selectedOptions, option => option.value);
+    setEditData(prev => ({ ...prev, participants: selected }));
   };
 
   const handleUpdateMeetup = async (e) => {
     e.preventDefault();
-    if (isUpdating) return;
-    setIsUpdating(true);
     try {
-      await axios.put(
-        `http://localhost:3000/meetups/${editMeetup._id}`,
-        { title: editTitle, location: editLocation, time: new Date(editTime), participants: editParticipants },
-        { withCredentials: true }
-      );
-      setMessage('Meetup updated successfully');
-      setShowEditModal(false);
-      const response = await axios.get('http://localhost:3000/meetups', { withCredentials: true });
-      setMeetups(response.data);
+      await axios.put(`http://localhost:3000/meetups/${editData.id}`, {
+        ...editData,
+        time: new Date(editData.time),
+      }, { withCredentials: true });
+      toast.success('Meetup updated successfully');
+      setIsModalOpen(false);
+      await fetchData();
     } catch (error) {
-      setMessage('Error updating meetup: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setIsUpdating(false);
+      toast.error('Error updating meetup');
+      if (error.response?.status === 401) navigate('/login');
     }
   };
 
@@ -108,185 +145,382 @@ const Home = () => {
     if (window.confirm('Are you sure you want to delete this meetup?')) {
       try {
         await axios.delete(`http://localhost:3000/meetups/${id}`, { withCredentials: true });
-        setMessage('Meetup deleted successfully');
-        const response = await axios.get('http://localhost:3000/meetups', { withCredentials: true });
-        setMeetups(response.data);
+        toast.success('Meetup deleted successfully');
+        await fetchData();
       } catch (error) {
-        setMessage('Error deleting meetup: ' + (error.response?.data?.message || error.message));
+        toast.error('Error deleting meetup');
+        if (error.response?.status === 401) navigate('/login');
       }
     }
   };
 
+  // Map component
   const MapClickHandler = () => {
     useMapEvents({
       click(e) {
-        if (!showEditModal) {
+        if (!isModalOpen) {
           setMapPosition([e.latlng.lat, e.latlng.lng]);
-          setLocation(`${e.latlng.lat}, ${e.latlng.lng}`);
+          setFormData(prev => ({ ...prev, location: `${e.latlng.lat}, ${e.latlng.lng}` }));
         }
       },
     });
     return null;
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+  
   if (!user) return null;
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl mb-4">Create Meetup</h2>
-      <form onSubmit={handleCreateMeetup} className="bg-white p-6 rounded shadow-md mb-6">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Meetup Title"
-          className="border p-2 mb-4 w-full"
-          required
-        />
-        <input
-          type="text"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="Location (click map to select)"
-          className="border p-2 mb-4 w-full"
-          required
-        />
-        <input
-          type="datetime-local"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          className="border p-2 mb-4 w-full"
-          required
-        />
-        <select
-          multiple
-          value={participants}
-          onChange={(e) => setParticipants(Array.from(e.target.selectedOptions, option => option.value))}
-          className="border p-2 mb-4 w-full"
-        >
-          {friends.length > 0 ? (
-            friends.map((friend) => (
-              <option key={friend._id} value={friend._id}>
-                {friend.name || friend.email}
-              </option>
-            ))
-          ) : (
-            <option disabled>No friends found</option>
-          )}
-        </select>
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-          Create Meetup
-        </button>
-      </form>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto">
+        <header className="mb-8 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-indigo-800 mb-2">Meetup Planner</h1>
+          <p className="text-gray-600">Plan and manage your meetups with friends</p>
+        </header>
 
-      {message && <div className="bg-yellow-100 p-3 mb-4 rounded">{message}</div>}
-
-      <div className="mb-6" style={{ height: '300px', zIndex: 10 }}>
-        <MapContainer center={mapPosition} zoom={13} style={{ height: '100%', width: '100%' }}>
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-          <Marker position={mapPosition} />
-          <MapClickHandler />
-        </MapContainer>
-      </div>
-
-      <h2 className="text-2xl mb-4">Your Meetups</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {meetups.map((meetup) => (
-          <div key={meetup._id} className="bg-white p-4 rounded shadow">
-            <h3 className="text-xl font-bold">{meetup.title}</h3>
-            <p>Location: {meetup.location}</p>
-            <p>Time: {new Date(meetup.time).toLocaleString()}</p>
-            <p>
-              Participants:{' '}
-              {Array.isArray(meetup.participants) && meetup.participants.length > 0
-                ? `${meetup.participants.length} participant(s): ${meetup.participants.map(p => p.name || p.email).join(', ')}`
-                : 'No participants'}
-            </p>
-            {meetup.creator._id === user._id && (
-              <div className="mt-2">
-                <button
-                  onClick={() => handleEditMeetup(meetup)}
-                  className="bg-yellow-500 text-white p-2 rounded mr-2"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column: Form and Map */}
+          <div>
+            {/* Create Meetup Card */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200">Create New Meetup</h2>
+              <form onSubmit={handleCreateMeetup}>
+                <div className="mb-5">
+                  <label className="block text-gray-700 mb-2 font-medium">Meetup Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    placeholder="Brunch at Cafe"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                
+                <div className="mb-5">
+                  <label className="block text-gray-700 mb-2 font-medium">Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    placeholder="Click map to select location"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                
+                <div className="mb-5">
+                  <label className="block text-gray-700 mb-2 font-medium">Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    name="time"
+                    value={formData.time}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                
+                <div className="mb-6">
+                  <label className="block text-gray-700 mb-2 font-medium">Participants</label>
+                  <select
+                    multiple
+                    value={formData.participants}
+                    onChange={handleParticipantChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px]"
+                  >
+                    {friends.length > 0 ? (
+                      friends.map((friend) => (
+                        <option key={friend._id} value={friend._id} className="py-2">
+                          {friend.name || friend.email}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No friends found</option>
+                    )}
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                </div>
+                
+                <button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:opacity-90 transition-opacity shadow-md"
                 >
-                  Edit
+                  Create Meetup
                 </button>
-                <button
-                  onClick={() => handleDeleteMeetup(meetup._id)}
-                  className="bg-red-500 text-white p-2 rounded"
-                >
-                  Delete
-                </button>
+              </form>
+            </div>
+            
+            {/* Map Card */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="p-4 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-800">Select Location</h2>
+                <p className="text-gray-600 text-sm">Click on the map to set the meetup location</p>
               </div>
-            )}
+              <div className="h-72 relative">
+                <MapContainer 
+                  center={mapPosition} 
+                  zoom={13} 
+                  style={{ height: '100%', width: '100%' }}
+                  className="z-0"
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <Marker position={mapPosition} />
+                  <MapClickHandler />
+                </MapContainer>
+                <div className="absolute bottom-4 left-4 bg-white px-3 py-1.5 rounded-lg shadow-md text-sm">
+                  <span className="font-medium">Current:</span> {formData.location || 'Click map'}
+                </div>
+              </div>
+            </div>
           </div>
-        ))}
+          
+          {/* Right Column: Meetups List */}
+          <div>
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-800">Your Meetups</h2>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => setActiveTab('all')}
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      activeTab === 'all' 
+                        ? 'bg-indigo-100 text-indigo-700' 
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('upcoming')}
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      activeTab === 'upcoming' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    Upcoming
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('past')}
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      activeTab === 'past' 
+                        ? 'bg-amber-100 text-amber-700' 
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    Past
+                  </button>
+                </div>
+              </div>
+              
+              {isLoading ? (
+                <div className="flex justify-center py-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : filteredMeetups.length === 0 ? (
+                <div className="text-center py-10">
+                  <div className="mx-auto bg-indigo-100 rounded-full p-4 w-16 h-16 flex items-center justify-center mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No meetups yet</h3>
+                  <p className="text-gray-500">
+                    {activeTab === 'all' 
+                      ? "Create your first meetup to get started!" 
+                      : activeTab === 'upcoming' 
+                        ? "You don't have any upcoming meetups" 
+                        : "You don't have any past meetups"}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredMeetups.map((meetup) => {
+                    const meetupTime = new Date(meetup.time);
+                    const now = new Date();
+                    const isPast = meetupTime < now;
+                    
+                    return (
+                      <div 
+                        key={meetup._id} 
+                        className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-800">{meetup.title}</h3>
+                            <div className="flex items-center mt-1 text-gray-600">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <span className="text-sm">{meetup.location}</span>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            isPast 
+                              ? 'bg-amber-100 text-amber-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {isPast ? 'Past' : 'Upcoming'}
+                          </span>
+                        </div>
+                        
+                        <div className="mt-3 flex items-center text-gray-600">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm">{meetupTime.toLocaleString()}</span>
+                        </div>
+                        
+                        <div className="mt-3">
+                          <div className="flex items-center text-gray-600 mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span className="text-sm font-medium">Participants:</span>
+                          </div>
+                          <div className="text-sm text-gray-700 pl-5">
+                            {Array.isArray(meetup.participants) && meetup.participants.length > 0
+                              ? meetup.participants.map(p => p.name || p.email).join(', ')
+                              : 'No participants'}
+                          </div>
+                        </div>
+                        
+                        {meetup.creator.email === user.email && (
+                          <div className="mt-4 flex space-x-2">
+                            <button
+                              onClick={() => openEditModal(meetup)}
+                              className="flex-1 bg-indigo-100 text-indigo-700 py-1.5 rounded-lg font-medium hover:bg-indigo-200 transition-colors flex items-center justify-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMeetup(meetup._id)}
+                              className="flex-1 bg-red-100 text-red-700 py-1.5 rounded-lg font-medium hover:bg-red-200 transition-colors flex items-center justify-center"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {showEditModal && (
-        <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50"
-          style={{ zIndex: 400 }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowEditModal(false);
-            }
-          }}
-        >
-          <div className="bg-white p-6 rounded shadow-md w-full max-w-md overflow-y-auto" style={{ maxHeight: '80vh' }}>
-            <h2 className="text-2xl mb-4">Edit Meetup</h2>
-            <form onSubmit={handleUpdateMeetup}>
-              <input
-                type="text"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Meetup Title"
-                className="border p-2 mb-4 w-full"
-                required
-              />
-              <input
-                type="text"
-                value={editLocation}
-                onChange={(e) => setEditLocation(e.target.value)}
-                placeholder="Location"
-                className="border p-2 mb-4 w-full"
-                required
-              />
-              <input
-                type="datetime-local"
-                value={editTime}
-                onChange={(e) => setEditTime(e.target.value)}
-                className="border p-2 mb-4 w-full"
-                required
-              />
-              <select
-                multiple
-                value={editParticipants}
-                onChange={(e) => setEditParticipants(Array.from(e.target.selectedOptions, option => option.value))}
-                className="border p-2 mb-4 w-full"
-              >
-                {friends.map((friend) => (
-                  <option key={friend._id} value={friend._id}>
-                    {friend.name || friend.email}
-                  </option>
-                ))}
-              </select>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="bg-gray-500 text-white p-2 rounded mr-2"
+      {/* Edit Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div 
+            className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">Edit Meetup</h2>
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  Cancel
-                </button>
-                <button type="submit" className="bg-blue-500 text-white p-2 rounded" disabled={isUpdating}>
-                  {isUpdating ? 'Updating...' : 'Update Meetup'}
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
-            </form>
+              
+              <form onSubmit={handleUpdateMeetup} className="space-y-4">
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={editData.title}
+                    onChange={handleEditChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={editData.location}
+                    onChange={handleEditChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    name="time"
+                    value={editData.time}
+                    onChange={handleEditChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">Participants</label>
+                  <select
+                    multiple
+                    value={editData.participants}
+                    onChange={handleEditParticipants}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px]"
+                  >
+                    {friends.map((friend) => (
+                      <option key={friend._id} value={friend._id} className="py-2">
+                        {friend.name || friend.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-6 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+                  >
+                    Update Meetup
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

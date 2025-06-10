@@ -9,6 +9,7 @@ import { MeetModule } from './meet/meet.module';
 import { FriendModule } from './friend/friend.module';
 
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
@@ -21,7 +22,8 @@ import { FriendModule } from './friend/friend.module';
     UsersModule,
     AuthModule,
     MeetModule,
-    FriendModule
+    FriendModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService],

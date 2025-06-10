@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,15 +16,16 @@ const Login = () => {
     setLoginMessage('');
     
     if (!email || !password) {
-      setLoginMessage('Please enter both email and password');
+      toast.warning('Please enter both email and password');
       return;
     }
     
     const success = await login(email, password);
     if (success) {
-      navigate('/'); // Redirect to home page after successful login
+      navigate('/');
+      toast.success('Login Successful'); // Redirect to home page after successful login
     } else {
-      setLoginMessage(error || 'Login failed. Please try again.');
+      toast.error(error||'Login failed. Please try again.');
     }
   };
 
@@ -32,12 +34,7 @@ const Login = () => {
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
         
-        {loginMessage && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {loginMessage}
-          </div>
-        )}
-        
+      
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
@@ -81,7 +78,6 @@ const Login = () => {
           <p className="mt-4">
           Already have an account? <a href="/signup" className="text-blue-500">Sign Up</a>
         </p>
-        {loginMessage && <p className="mt-4">{loginMessage}</p>}
         </form>
       </div>
     </div>

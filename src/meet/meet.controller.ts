@@ -16,13 +16,15 @@ export class MeetController {
     @UseGuards(JwtAuthGuard,JwtRefreshAuthGuard)
     @Post()
     async createMeet(@Body() meet:CreateMeetDto,@CurrentUser() user: any){
-        console.log(user,"this is current user");
-       return await this.meetService.createMeet(
+   
+       const response = await this.meetService.createMeet(
             meet.title,
             meet.location, 
             meet.time, 
             meet.participants,
             user._id);
+            console.log(response,"this is response");
+            return response;
     }
     @UseGuards(JwtAuthGuard,JwtRefreshAuthGuard)
     @Put(':id')

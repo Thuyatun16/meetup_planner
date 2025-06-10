@@ -44,7 +44,8 @@ export const AuthProvider = ({ children }) => {
       
       // The backend sets cookies automatically
       // We can store some user info in state if needed
-      setUser({ email });
+      setUser({email});
+      console.log('User logged in:', response);
       return true;
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');

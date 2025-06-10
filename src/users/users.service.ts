@@ -45,8 +45,10 @@ export class UsersService {
         }
          return await this.userModel.findOneAndUpdate(query,finalUpdate,{new: true});
     }
-    async addFriend(userId: string,friendId: string ){
-        return await this.userModel.findByIdAndUpdate(userId, {$push:{friends: friendId}}).exec();
+    async addFriend(userId: string, friendId: string) {
+        await this.userModel.findByIdAndUpdate(userId, {
+            $addToSet: { friends: friendId }, // $addToSet prevents duplicates
+        });
     }
     async deleteUser(email: string){
         const result=  await this.userModel.deleteOne({email});

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -16,7 +17,7 @@ const Signup = () => {
       setMessage('Signup successful! Please log in.');
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
-      setMessage('Error: ' + error.response.data.message);
+      toast.error('Error: ' + error.response.data.message);
     }
   };
 
