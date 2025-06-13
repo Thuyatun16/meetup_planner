@@ -59,4 +59,17 @@ export class UsersService {
             message: 'Delete Successfully'
         }
     }
+    
+    async updateLocation(userId: string, locationData: { latitude: number; longitude: number }) {
+        return await this.userModel.findByIdAndUpdate(
+            userId,
+            {
+                location: {
+                    type: 'Point',
+                    coordinates: [locationData.longitude, locationData.latitude]
+                }
+            },
+            { new: true }
+        );
+    }
 }

@@ -17,6 +17,7 @@ export class User {
     name?: string;
     @Prop({type: [{type: Types.ObjectId, ref: 'User'}]})
     friends?: Types.ObjectId[];
-
+    @Prop({ type: { type: String, default: 'Point' }, coordinates: [Number] })
+    location?: { type: string; coordinates: number[] };
 }
 export const UserSchema = SchemaFactory.createForClass(User);

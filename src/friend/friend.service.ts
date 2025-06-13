@@ -44,6 +44,11 @@ export class FriendService {
         if (response === 'accept') {
             friendRequest.status = FriendStatus.ACCEPTED;
             await friendRequest.save();
+            await this.friendModel.create({
+              user: userId,
+              friend: requesterId,
+              status: FriendStatus.ACCEPTED,
+            });
             await this.userService.addFriend(userId, requesterId);
             await this.userService.addFriend(requesterId, userId);
         } else {
@@ -125,4 +130,19 @@ export class FriendService {
         }
         return { message: 'Friend request canceled' };
     }
+
+    async getFriendsLocations(userId: string) {
+      const user = await this.userModel.findById(userId).populate('friends').exec();
+  
+      if (!user) {
+          throw new NotFoundException('User not found');
+      }
+  
+      return (user.friends as unknown as User[]).map(friend => ({
+          _id: friend._id,
+          name: friend.name,
+          email: friend.email,
+          location: friend.location
+      }));
+  }
 }

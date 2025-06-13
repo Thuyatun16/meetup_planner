@@ -24,4 +24,13 @@ export class UsersController {
     async me(user: User){
         return this.userService.getUsers();
     }
+    
+    @Post('location')
+    @UseGuards(JwtAuthGuard)
+    async updateLocation(
+        @CurrentUser() user,
+        @Body() locationData: { latitude: number; longitude: number }
+    ) {
+        return await this.userService.updateLocation(user._id, locationData);
+    }
 }

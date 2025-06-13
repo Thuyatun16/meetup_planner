@@ -2,6 +2,7 @@ import { BadRequestException, Body, Controller, Delete, Get, Param, Post, UseGua
 import { FriendService } from './friend.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/current-user.decorator';
+import { User } from 'src/users/schema/user.schema';
 
 @Controller('friend')
 export class FriendController {
@@ -51,5 +52,11 @@ export class FriendController {
     @UseGuards(JwtAuthGuard)
     async cancelFriendRequest(@CurrentUser() user, @Param('recipientId') recipientId: string) {
         return this.friendService.cancelFriendRequest(user._id, recipientId);
+    }
+
+    @Get('locations')
+    @UseGuards(JwtAuthGuard)
+    async getFriendsLocations(@CurrentUser() user) {
+        return await this.friendService.getFriendsLocations(user._id);
     }
 }
