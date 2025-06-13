@@ -36,6 +36,13 @@ export class MeetController {
         return this.meetService.update(id,meet);
     }
     @UseGuards(JwtAuthGuard,JwtRefreshAuthGuard)
+    @Get(':id')
+    async findOne(@Param('id')id: string){
+         const meetup = await this.meetService.findOne(id);
+        return meetup;
+    }
+
+    @UseGuards(JwtAuthGuard,JwtRefreshAuthGuard)
     @Delete(':id')
     async deleteMeet(@Param('id')id: string,@CurrentUser() user:any){
         // const meetup = await this.meetService.findOne(id);

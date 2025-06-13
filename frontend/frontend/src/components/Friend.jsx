@@ -110,7 +110,7 @@ const Friends = () => {
     return (
       <>
         <div className='min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 py-12 px-4 sm:px-6'>
-        <div className="p-6 max-w-4xl mx-auto mt-24 ">
+        <div className="p-6 max-w-4xl mx-auto mt-8 ">
             <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Friends</h1>
             <div className="bg-white rounded-xl shadow-md p-6 mb-8">
                 <h2 className="text-xl font-semibold text-gray-700 mb-4">Add Friend</h2>

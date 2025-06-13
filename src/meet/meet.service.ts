@@ -23,7 +23,16 @@ export class MeetService {
         return await newMeet.save();
       }
     async findOne(id: string){
-        return this.meetModel.findById(id).exec();
+        return this.meetModel.findById(id)
+        .populate({
+            path: 'participants',
+            select: '-password -refreshToken -__v -friends' ,
+
+        }).populate({
+            path: 'creator',
+            select: '-password -refreshToken -__v -friends',
+        })                            
+        .exec();
     }
     async update(id: string, meet: UpdateMeetDto) {
         const updateData = { ...meet };

@@ -10,6 +10,7 @@ import Home from './components/Home';
 import Friends from './components/Friend';
 import About from './components/About';
 import Contact from './components/Contact';
+import { MeetupDetails } from './components/Meetup';
 import 'leaflet/dist/leaflet.css';
 
 const ProtectedRoute = ({ children }) => {
@@ -69,13 +70,23 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          
           <Route 
             path="/friends" 
             element={
               <ProtectedRoute>
                 <AuthenticatedLayout>
                   <Friends />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/meetup/:id" 
+            element={
+              <ProtectedRoute>
+                <AuthenticatedLayout>
+                  <MeetupDetails />
                 </AuthenticatedLayout>
               </ProtectedRoute>
             } 
