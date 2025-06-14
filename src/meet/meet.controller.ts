@@ -4,7 +4,6 @@ import { Body } from '@nestjs/common';
 import { MeetService } from './meet.service';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { JwtRefreshAuthGuard } from 'src/auth/guards/jwt-refresh.auth.guard';
 import { CurrentUser } from 'src/auth/current-user.decorator';
 import { User } from 'src/users/schema/user.schema';
 
@@ -13,7 +12,7 @@ import { User } from 'src/users/schema/user.schema';
 export class MeetController {
     constructor (private readonly meetService: MeetService){
     }
-    @UseGuards(JwtAuthGuard,JwtRefreshAuthGuard)
+    @UseGuards(JwtAuthGuard)
     @Post()
     async createMeet(@Body() meet:CreateMeetDto,@CurrentUser() user: any){
    
@@ -26,7 +25,7 @@ export class MeetController {
             console.log(response,"this is response");
             return response;
     }
-    @UseGuards(JwtAuthGuard,JwtRefreshAuthGuard)
+    @UseGuards(JwtAuthGuard)
     @Put(':id')
     async updateMeet(@Param('id')id: string,@Body() meet:UpdateMeetDto,@CurrentUser() user:any){
         // const meetup = await this.meetService.findOne(id);
@@ -35,14 +34,14 @@ export class MeetController {
         // }
         return this.meetService.update(id,meet);
     }
-    @UseGuards(JwtAuthGuard,JwtRefreshAuthGuard)
+    @UseGuards(JwtAuthGuard)
     @Get(':id')
     async findOne(@Param('id')id: string){
          const meetup = await this.meetService.findOne(id);
         return meetup;
     }
 
-    @UseGuards(JwtAuthGuard,JwtRefreshAuthGuard)
+    @UseGuards(JwtAuthGuard)
     @Delete(':id')
     async deleteMeet(@Param('id')id: string,@CurrentUser() user:any){
         // const meetup = await this.meetService.findOne(id);
@@ -52,7 +51,7 @@ export class MeetController {
         return this.meetService.delete(id);
     }
 
-    @UseGuards(JwtAuthGuard,JwtRefreshAuthGuard)
+    @UseGuards(JwtAuthGuard)
     @Get()
     async findAll(@CurrentUser() user: any){
         return await this.meetService.findAll(user._id);

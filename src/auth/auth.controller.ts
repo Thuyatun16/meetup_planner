@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, Res, UseGuards } from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { User } from 'src/users/schema/user.schema';
@@ -49,6 +49,11 @@ export class AuthController {
     async getProfile(@CurrentUser() user: User) {
       return user;
     }
+    // @Get('test')
+    // @UseGuards(JwtAuthGuard)
+    // async test(@Req() req: any){
+    //     console.log(req.user);
+    // }
     
     // You might also want to add a logout endpoint
     @Post('logout')

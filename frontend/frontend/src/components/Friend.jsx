@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { toast } from 'react-toastify';
+import { api } from '../api/api';
 
 const Friends = () => {
     const [friendEmail, setFriendEmail] = useState('');
@@ -17,9 +17,9 @@ const Friends = () => {
             try {
                 setIsLoading(true);
                 const [friendsRes, pendingRes, sentRes] = await Promise.all([
-                    axios.get('http://localhost:3000/friend/friends', { withCredentials: true }),
-                    axios.get('http://localhost:3000/friend/pending', { withCredentials: true }),
-                    axios.get('http://localhost:3000/friend/sent', { withCredentials: true }),
+                    api.get('/friend/friends'), 
+                    api.get('/friend/pending'), 
+                    api.get('/friend/sent'), 
                 ]);
                 setFriends(friendsRes.data);
                 setPendingRequests(pendingRes.data);
@@ -36,13 +36,13 @@ const Friends = () => {
     const handleAddFriend = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(
-                'http://localhost:3000/friend/request',
-                { email: friendEmail },
-                { withCredentials: true }
+            await api.post(
+                '/friend/request',
+                { email: friendEmail }
+           
             );
             toast.success('Friend request sent successfully');
-            const sentRes = await axios.get('http://localhost:3000/friend/sent', { withCredentials: true });
+            const sentRes = await api.get('/friend/sent');
             setSentRequests(sentRes.data);
             setFriendEmail('');
         } catch (error) {
@@ -52,15 +52,15 @@ const Friends = () => {
 
     const handleRespond = async (requesterId, response) => {
         try {
-            await axios.post(
-                'http://localhost:3000/friend/respond',
-                { requesterId, response },
-                { withCredentials: true }
+            await api.post(
+                '/friend/respond',
+                { requesterId, response }
+                
             );
             toast.success(`Request ${response === 'accept' ? 'accepted' : 'rejected'}`);
             const [friendsRes, pendingRes] = await Promise.all([
-                axios.get('http://localhost:3000/friend/friends', { withCredentials: true }),
-                axios.get('http://localhost:3000/friend/pending', { withCredentials: true }),
+                api.get('/friend/friends'),
+                api.get('/friend/pending'),
             ]);
             setFriends(friendsRes.data);
             setPendingRequests(pendingRes.data);
@@ -71,9 +71,9 @@ const Friends = () => {
 
     const handleRemoveFriend = async () => {
         try {
-            await axios.delete(`http://localhost:3000/friend/${friendToRemove._id}`, { withCredentials: true });
+            await api.delete(`/friend/${friendToRemove._id}`);
             toast.success('Friend removed successfully');
-            const friendsRes = await axios.get('http://localhost:3000/friend/friends', { withCredentials: true });
+            const friendsRes = await api.get('/friend/friends');
             setFriends(friendsRes.data);
         } catch (error) {
             toast.error('Error removing friend: ' + (error.response?.data?.message || error.message));
@@ -90,9 +90,9 @@ const Friends = () => {
 
     const cancelRequest = async (recipientId) => {
         try {
-            await axios.delete(`http://localhost:3000/friend/request/${recipientId}`, { withCredentials: true });
+            await api.delete(`/friend/request/${recipientId}`);
             toast.success('Request canceled');
-            const sentRes = await axios.get('http://localhost:3000/friend/sent', { withCredentials: true });
+            const sentRes = await api.get('/friend/sent');
             setSentRequests(sentRes.data);
         } catch (error) {
             toast.error('Error canceling request: ' + (error.response?.data?.message || error.message));

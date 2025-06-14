@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../api/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -52,7 +52,7 @@ export const MeetupDetails = () => {
     const fetchMeetup = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`http://localhost:3000/meetups/${id}`, { withCredentials: true });
+        const response = await api.get(`/meetups/${id}`);
         setMeetup(response.data);
         console.log(response.data.creator.name);
       } catch (error) {

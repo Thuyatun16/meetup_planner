@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { api } from '../api/api';
 import { MapContainer, TileLayer, Marker, useMapEvents, Popup } from 'react-leaflet';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -64,17 +64,14 @@ const Home = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    axios.defaults.withCredentials = true;
-  }, []);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
     try {
       setIsLoading(true);
       const [meetupsResponse, friendsResponse] = await Promise.all([
-        axios.get('http://localhost:3000/meetups', { withCredentials: true }),
-        axios.get('http://localhost:3000/friend/friends', { withCredentials: true })
+        api.get('/meetups'),
+        api.get('/friend/friends')
       ]);
       setMeetups(meetupsResponse.data);
       setFriends(friendsResponse.data);
@@ -120,8 +117,7 @@ const Home = () => {
 
       if (nearMeetings.length > 0) {
         try {
-          const response = await axios.get('http://localhost:3000/friend/locations', {
-            withCredentials: true,
+          const response = await api.get('/friend/locations', {
             params: { meetingId: nearMeetings[0]._id }
           });
           setFriendsLocations(response.data);
@@ -142,9 +138,8 @@ const Home = () => {
       const sendLocation = async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          await axios.post('http://localhost:3000/users/location', 
-            { latitude, longitude },
-            { withCredentials: true }
+          await api.post('/users/location', 
+            { latitude, longitude }
           );
         } catch (error) {
           console.error('Error updating location:', error);
@@ -198,10 +193,10 @@ const Home = () => {
         toast.warning('Please fill in all fields');
         return;
       }
-      await axios.post('http://localhost:3000/meetups', {
+      await api.post('/meetups', {
         ...formData,
         time: new Date(formData.time),
-      }, { withCredentials: true });
+      });
       toast.success('Meetup created successfully');
       await fetchData();
       setFormData({ title: '', location: '', time: '', participants: [] });
@@ -235,10 +230,10 @@ const Home = () => {
   const handleUpdateMeetup = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:3000/meetups/${editData.id}`, {
+      await api.put(`meetups/${editData.id}`, {
         ...editData,
         time: new Date(editData.time),
-      }, { withCredentials: true });
+      });
       toast.success('Meetup updated successfully');
       setIsModalOpen(false);
       await fetchData();
@@ -251,7 +246,7 @@ const Home = () => {
   const handleDeleteMeetup = async (id) => {
     if (window.confirm('Are you sure you want to delete this meetup?')) {
       try {
-        await axios.delete(`http://localhost:3000/meetups/${id}`, { withCredentials: true });
+        await api.delete(`/meetups/${id}`);
         toast.success('Meetup deleted successfully');
         await fetchData();
       } catch (error) {
