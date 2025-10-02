@@ -1,4 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Res, Delete, Put } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth } from '@nestjs/swagger';
+import { LoginDto, UserResponseDto } from './dto/auth.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { User } from 'src/users/schema/user.schema';
@@ -9,15 +11,18 @@ import { RolesGuard } from './guards/role.guard';
 import { Role } from './role-decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsersService } from 'src/users/users.service';
-
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService
         ,private readonly userService: UsersService
     ) { }
     @Post('login')
-    @UseGuards(LocalAuthGuard)
+    @ApiOperation({ summary: 'Login user' })
+    @ApiResponse({ status: 200, description: 'Login successful', type: UserResponseDto })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     async login(
+        @Body() loginDto: LoginDto,
         @CurrentUser() user: User,
         @Res({ passthrough: true }) response: Response,
     ) {
@@ -42,21 +47,18 @@ export class AuthController {
     async updateUser(@CurrentUser() user:User,@Body() updateData: Partial<User>): Promise<User|null>{
         return await this.userService.updateUser({_id: user._id},updateData);
     }
-    // Add this to your existing auth.controller.ts
-    
     @Get('me')
-    @UseGuards(JwtAuthGuard)
+    @ApiCookieAuth()
+    @ApiOperation({ summary: 'Get current user' })
+    @ApiResponse({ status: 200, description: 'User info retrieved', type: UserResponseDto })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     async getProfile(@CurrentUser() user: User) {
       return user;
     }
-    // @Get('test')
-    // @UseGuards(JwtAuthGuard)
-    // async test(@Req() req: any){
-    //     console.log(req.user);
-    // }
-    
-    // You might also want to add a logout endpoint
     @Post('logout')
+    @ApiCookieAuth()
+    @ApiOperation({ summary: 'Logout user' })
+    @ApiResponse({ status: 200, description: 'Logout successful' })
     async logout(@Res({ passthrough: true }) response: Response) {
       response.clearCookie('Authentication');
       response.clearCookie('Refresh');
