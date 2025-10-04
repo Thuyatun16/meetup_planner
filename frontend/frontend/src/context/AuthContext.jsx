@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { api } from '../api/api';
 
 const AuthContext = createContext(null);
 
@@ -37,7 +38,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       
       const response = await axios.post(
-        'http://localhost:3000/auth/login',
+        api.defaults.baseURL + '/auth/login',
         { email, password },
         { withCredentials: true }
       );
@@ -59,7 +60,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       // You may need to implement a logout endpoint in your backend
-      await axios.post('http://localhost:3000/auth/logout', {}, { withCredentials: true });
+      await axios.post(api.defaults.baseURL+'/auth/logout', {}, { withCredentials: true });
       setUser(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Logout failed');
