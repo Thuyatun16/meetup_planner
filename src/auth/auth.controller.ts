@@ -23,9 +23,11 @@ export class AuthController {
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async login(
         @Body() loginDto: LoginDto,
-        @CurrentUser() user: User,
         @Res({ passthrough: true }) response: Response,
     ) {
+        const user =
+        await this.authService.verifyUser(loginDto);
+        console.log(user, 'this is user data');
         await this.authService.login(user, response);
     }
     @Post('refresh')

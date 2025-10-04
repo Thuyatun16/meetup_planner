@@ -5,7 +5,8 @@ import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  try {
+    const app = await NestFactory.create(AppModule);
   
   // Swagger configuration
   const config = new DocumentBuilder()
@@ -13,7 +14,6 @@ async function bootstrap() {
     .setDescription('The Mongoose CRUD API description')
     .setVersion('1.0')
     .addTag('auth')
-    .addTag('friends')
     .addCookieAuth('connect.sid')
     .build();
   
@@ -27,5 +27,10 @@ async function bootstrap() {
     credentials: true,
   })
   await app.listen(process.env.PORT ?? 3000);
+  console.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
+  } catch (error) {
+    console.log('Error starting the application:', error);
+    process.exit(1);
+  }
 }
 bootstrap();

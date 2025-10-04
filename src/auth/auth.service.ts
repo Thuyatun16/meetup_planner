@@ -7,6 +7,7 @@ import { UsersService } from 'src/users/users.service';
 import { TokenPayload } from './token-payload.interface';
 import { Response } from 'express';
 import { hash } from 'bcryptjs';
+import { LoginDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -85,10 +86,10 @@ export class AuthService {
         }
     }
     
-    async verifyUser(email: string, password: string): Promise<User> {
+    async verifyUser(loginDto: LoginDto): Promise<User> {
         try {
-            const user = await this.userService.getUser({email});
-            const authenticated = await compare(password, user.password);
+            const user = await this.userService.getUser({email: loginDto.email});
+            const authenticated = await compare(loginDto.password, user.password);
             if(!authenticated){
                 throw new UnauthorizedException('Invalid Credentials');
             }
