@@ -30,7 +30,8 @@ async function bootstrap() {
     app.useGlobalPipes(new ValidationPipe());
     app.use(cookieParser());
     app.enableCors({
-      origin: 'http://localhost:5173',
+      origin: ['http://localhost:5173',
+      'https://meetup-planner-aelayu5sa-thuyatun16s-projects.vercel.app'],
       credentials: true,
     })
     await app.listen(process.env.PORT ?? 3000);
