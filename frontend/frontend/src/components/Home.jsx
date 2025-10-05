@@ -8,6 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import io from 'socket.io-client';
 import L from 'leaflet'; // Import Leaflet library
 import { Link } from 'react-router-dom';
+import { api } from '../api/api';
 
 // Define custom icons
 const userIcon = new L.Icon({
@@ -159,7 +160,7 @@ const Home = () => {
   }, [user]);
   // Optional: Real-time updates with WebSockets
   useEffect(() => {
-    const socket = io('http://localhost:3000');
+    const socket = io(api.defaults.baseURL, { withCredentials: true });
     socket.on('locationUpdate', (data) => {
       setFriendsLocations(prev => prev.map(friend => 
         friend._id === data._id ? { ...friend, location: data.location } : friend
