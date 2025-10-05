@@ -69,6 +69,7 @@ export class AuthService {
             accessToken,
             refreshToken
         })
+        return {accessToken, refreshToken};
     }
     async verifyUserRefreshToken(refreshToken: string, userId: string){
         try {
