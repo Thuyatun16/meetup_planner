@@ -12,6 +12,7 @@ import { Role } from './role-decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsersService } from 'src/users/users.service';
 @ApiTags('auth')
+ @UseGuards(JwtRefreshAuthGuard)
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService
@@ -31,7 +32,7 @@ export class AuthController {
         await this.authService.login(user, response);
     }
     @Post('refresh')
-    @UseGuards(JwtRefreshAuthGuard)
+   
     async refresh(
         @CurrentUser() user: User,
         @Res({ passthrough: true }) response: Response,
