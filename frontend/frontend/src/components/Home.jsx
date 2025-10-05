@@ -8,7 +8,6 @@ import 'leaflet/dist/leaflet.css';
 import io from 'socket.io-client';
 import L from 'leaflet'; // Import Leaflet library
 import { Link } from 'react-router-dom';
-import { api } from '../api/api';
 
 // Define custom icons
 const userIcon = new L.Icon({
