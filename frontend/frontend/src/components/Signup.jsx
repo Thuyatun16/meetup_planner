@@ -14,7 +14,7 @@ const Signup = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(api.defaults.baseURL+'users/signup', { email, password, name });
+      await axios.post(api.defaults.baseURL+'/users/signup', { email, password, name });
       setMessage('Signup successful! Please log in.');
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
