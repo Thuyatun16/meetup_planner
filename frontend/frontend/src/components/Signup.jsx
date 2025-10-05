@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { api } from '../api/api';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ const Signup = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3000/users/signup', { email, password, name });
+      await axios.post(api.defaults.baseURL+'users/signup', { email, password, name });
       setMessage('Signup successful! Please log in.');
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
