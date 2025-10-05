@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
 
   // Check if user is already logged in on component mount
   useEffect(() => {
@@ -17,7 +18,7 @@ export const AuthProvider = ({ children }) => {
         axios.defaults.withCredentials = true;
         
         // Try to access a protected endpoint to verify authentication
-        const response = await axios.get('http://localhost:3000/auth/me');
+        const response = await axios.get(api.defaults.baseURL+'/auth/me');
         if (response.data) {
           setUser(response.data);
         }
