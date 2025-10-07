@@ -17,7 +17,7 @@ export class AuthService {
         private readonly jwtService: JwtService
     ){}
 
-    async login(user: User, response: Response){
+    async login(user: User, response: Response,remember: boolean = false){
         if (!user || !user._id) {
             throw new UnauthorizedException('Invalid user data');
         }
@@ -58,14 +58,14 @@ export class AuthService {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            expires: expireAccessToken
+           ...(remember ? {expires: expireAccessToken} : {})
         });
        
         response.cookie('Refresh', refreshToken, {
             httpOnly: true,
             secure:true,
             sameSite: 'none',
-            expires: expireRefereshToken
+            ...(remember ? {expires: expireRefereshToken} : {})
         });
         response.send({
             accessToken,

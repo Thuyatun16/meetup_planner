@@ -28,7 +28,7 @@ export class AuthController {
         const user =
         await this.authService.verifyUser(loginDto);
         console.log(user, 'this is user data');
-        await this.authService.login(user, response);
+        await this.authService.login(user, response,loginDto.remember===true);
     }
     @Post('refresh')
     @UseGuards(JwtRefreshAuthGuard)

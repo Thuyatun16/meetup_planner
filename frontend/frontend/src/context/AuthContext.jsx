@@ -33,14 +33,14 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, remember = true) => {
     try {
       setError(null);
       setLoading(true);
       
       const response = await axios.post(
         api.defaults.baseURL + '/auth/login',
-        { email, password },
+        { email, password, remember },
         { withCredentials: true }
       );
       

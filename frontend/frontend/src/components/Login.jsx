@@ -7,7 +7,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
-  
+  const [remember, setRemember] = useState(true);
   const { login, error, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -75,6 +75,17 @@ const Login = () => {
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </div>
+          <div className="flex items-center justify-between">
+  <label className="inline-flex items-center">
+    <input
+      type="checkbox"
+      checked={remember}
+      onChange={(e) => setRemember(e.target.checked)}
+      className="mr-2"
+    />
+    Remember me
+  </label>
+</div>
           <p className="mt-4">
           Already have an account? <a href="/signup" className="text-blue-500">Sign Up</a>
         </p>

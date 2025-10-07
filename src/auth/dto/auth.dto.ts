@@ -13,6 +13,13 @@ export class LoginDto {
     description: 'The password of the user',
   })
   password: string;
+
+  @ApiProperty({
+    example: true,
+    required: false,
+    description: 'Remember the user',
+  })
+  remember?: boolean;
 }
 
 export class UserResponseDto {
