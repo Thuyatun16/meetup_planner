@@ -3,6 +3,7 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schema/user.schema';
+import { RealtimeGateway } from 'src/realtime/realtime.gateway';
 
 @Module({
   imports: [MongooseModule.forFeature([
@@ -12,7 +13,7 @@ import { User, UserSchema } from './schema/user.schema';
     }
   ])],
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [UsersService, RealtimeGateway],
   exports: [UsersService]
 })
 export class UsersModule {}
