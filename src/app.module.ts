@@ -7,6 +7,7 @@ import { MeetModule } from './meet/meet.module';
 import { FriendModule } from './friend/friend.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { RealtimeGateway } from './realtime/realtime.gateway';
 
 
 @Module({
@@ -27,6 +28,6 @@ import { AppService } from './app.service';
     FriendModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,RealtimeGateway],
 })
 export class AppModule {}

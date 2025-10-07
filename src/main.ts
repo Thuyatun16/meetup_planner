@@ -33,7 +33,10 @@ async function bootstrap() {
       origin: ['http://localhost:5173',
       'https://meetup-planner-ruddy.vercel.app'],
       credentials: true,
-    })
+    });
+    const{ IoAdapter } = await import('@nestjs/platform-socket.io');
+    app.useWebSocketAdapter(new IoAdapter(app));
+
     await app.listen(process.env.PORT ?? 3000);
     console.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
   } catch (error) {
