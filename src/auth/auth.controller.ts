@@ -12,7 +12,6 @@ import { Role } from './role-decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UsersService } from 'src/users/users.service';
 @ApiTags('auth')
- @UseGuards(JwtRefreshAuthGuard)
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService
