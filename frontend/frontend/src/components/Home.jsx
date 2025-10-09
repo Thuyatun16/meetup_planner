@@ -50,6 +50,7 @@ const Home = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [friendsLocations, setFriendsLocations] = useState([]);
   const [selectedMeetupLocation, setSelectedMeetupLocation] = useState(null); // New state for selected meetup location
+  const [tempLocation, setTempLocation] = useState(null);
   const [editData, setEditData] = useState({
     id: null,
     title: '',
@@ -58,6 +59,7 @@ const Home = () => {
     participants: []
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
@@ -259,10 +261,8 @@ const Home = () => {
   const MapClickHandler = () => {
     useMapEvents({
       click(e) {
-        if (!isModalOpen) {
-          // Removed setMapPosition to prevent recentering
-          setSelectedMeetupLocation([e.latlng.lat, e.latlng.lng]); // Set selected meetup location
-          setFormData(prev => ({ ...prev, location: `${e.latlng.lat}, ${e.latlng.lng}` }));
+        if (isMapModalOpen) {
+          setTempLocation([e.latlng.lat, e.latlng.lng]);
         }
       },
     });
@@ -299,15 +299,13 @@ const Home = () => {
                 </div>
                 <div className="mb-5">
                   <label className="block text-gray-700 mb-2 font-medium">Location</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    placeholder="Click map to select location"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsMapModalOpen(true)}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-left"
+                  >
+                    {formData.location ? formData.location : "Select Location on Map"}
+                  </button>
                 </div>
                 <div className="mb-5">
                   <label className="block text-gray-700 mb-2 font-medium">Date & Time</label>
@@ -350,26 +348,8 @@ const Home = () => {
                 <h2 className="text-xl font-bold text-gray-800">Your Location & Friends</h2>
                 <p className="text-gray-600 text-sm">Your location is shown always; friends appear when a meeting is near.</p>
               </div>
-              <div className="h-72 relative">
-                <MapContainer center={mapPosition} zoom={13} style={{ height: '100%', width: '100%' }} className="z-0">
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  />
-                  {userLocation && <Marker position={userLocation} icon={userIcon} />}
-                  {selectedMeetupLocation && <Marker position={selectedMeetupLocation} icon={meetupIcon} />}
-                  {friendsLocations.map((friend, index) => (
-                    friend.location && friend.location.coordinates && friend.location.coordinates.length === 2 &&
-                    typeof friend.location.coordinates[0] === 'number' && typeof friend.location.coordinates[1] === 'number' ?
-                    <Marker key={index} position={[friend.location.coordinates[1], friend.location.coordinates[0]]} icon={friendIcon}>
-                      <Popup>{friend.name || friend.email}</Popup>
-                    </Marker> : null
-                  ))}
-                  <MapClickHandler />
-                </MapContainer>
-                <div className="absolute bottom-4 left-4 bg-white px-3 py-1.5 rounded-lg shadow-md text-sm">
-                  <span className="font-medium">Current:</span> {formData.location || 'Click map'}
-                </div>
+              <div className="h-96 relative">
+                {/* Map is now in the modal */}
               </div>
             </div>
           </div>  
@@ -533,10 +513,46 @@ const Home = () => {
           </div>
         </div>
       )}
+
+      {isMapModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">Select Location</h2>
+                <button onClick={() => setIsMapModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="h-96 relative">
+                <MapContainer center={mapPosition} zoom={13} style={{ height: '100%', width: '100%' }} className="z-0">
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  {userLocation && <Marker position={userLocation} icon={userIcon} />}
+                  {tempLocation && <Marker position={tempLocation} icon={meetupIcon} />}
+                  <MapClickHandler />
+                </MapContainer>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                  <button onClick={() => setIsMapModalOpen(false)} className="px-6 py-2.5 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors">Cancel</button>
+                  <button onClick={() => {
+                    setFormData(prev => ({ ...prev, location: `${tempLocation[0]}, ${tempLocation[1]}` }));
+                    setIsMapModalOpen(false);
+                  }} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity">Confirm Location</button>
+              </div>
+              </div>
+          </div>
+        </div>
+      )}
     </div>
+    
   );
 };
 
 export default Home;
 
-// Add this effect to send location updates
+

@@ -40,9 +40,12 @@ const Signup = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="border p-2 mb-4 w-full"
+          className="border p-2 mb-2 w-full"
           required
         />
+        <p className="text-xs text-gray-500 mb-4">
+          Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one symbol.
+        </p>
         <input
           type="text"
           value={name}
