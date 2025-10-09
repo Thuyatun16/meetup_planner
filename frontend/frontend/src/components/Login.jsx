@@ -87,7 +87,7 @@ const Login = () => {
   </label>
 </div>
           <p className="mt-4">
-          Already have an account? <a href="/signup" className="text-blue-500">Sign Up</a>
+        Don't have an account? <a href="/signup" className="text-blue-500">Sign Up</a>
         </p>
         </form>
       </div>
