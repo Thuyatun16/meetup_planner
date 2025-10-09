@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
         const response = await axios.get(api.defaults.baseURL+'/auth/me');
         if (response.data) {
           setUser(response.data);
+          console.log('User authenticated:', response.data);
         }
       } catch (err) {
         // User is not authenticated, but this isn't an error
