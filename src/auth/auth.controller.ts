@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Get, UseGuards, Res, Delete, Put } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, } from '@nestjs/swagger';
+import { ApiCookieAuth } from '@nestjs/swagger';
 import { LoginDto, UserResponseDto } from './dto/auth.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from './current-user.decorator';
@@ -51,6 +52,7 @@ export class AuthController {
     }
     @Get('me')
     @ApiCookieAuth()
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Get current user' })
     @ApiResponse({ status: 200, description: 'User info retrieved', type: UserResponseDto })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
